@@ -11,6 +11,7 @@ import {
   FiTrash2,
   FiX,
 } from "react-icons/fi";
+import api, { adminApi } from "../../utils/api";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -35,19 +36,7 @@ const UserList = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const data = await response.json();
+      const data = await adminApi.getUsers();
       setUsers(data);
     } catch (err) {
       setError(err.message);
@@ -80,22 +69,7 @@ const UserList = () => {
   const handleSuspendUser = async (userId) => {
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/users/${userId}/suspend`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to suspend user");
-      }
-
+      await api.put(`/admin/users/${userId}/suspend`);
       await fetchUsers(); // Refresh the list
     } catch (err) {
       setError(err.message);
@@ -107,22 +81,7 @@ const UserList = () => {
   const handleActivateUser = async (userId) => {
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/users/${userId}/activate`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to activate user");
-      }
-
+      await api.put(`/admin/users/${userId}/activate`);
       await fetchUsers(); // Refresh the list
     } catch (err) {
       setError(err.message);
@@ -134,23 +93,7 @@ const UserList = () => {
   const handleUpdateUser = async () => {
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/users/${selectedUser._id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(editForm),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
-      }
-
+      await adminApi.updateUser(selectedUser._id, editForm);
       await fetchUsers(); // Refresh the list
       setShowEditModal(false);
     } catch (err) {
@@ -163,22 +106,7 @@ const UserList = () => {
   const handleConfirmDelete = async () => {
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/users/${selectedUser._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
-      }
-
+      await adminApi.deleteUser(selectedUser._id);
       await fetchUsers(); // Refresh the list
       setShowDeleteModal(false);
     } catch (err) {
