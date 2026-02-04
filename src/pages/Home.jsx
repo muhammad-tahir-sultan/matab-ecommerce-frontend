@@ -19,14 +19,14 @@ import {
 import HeroSection from "../components/sections/heroSection";
 import ProductSection from "../components/sections/ProductSection";
 import EmptyState from "../components/sections/EmptyState";
-import axios from "axios";
+import api from "../utils/api";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-   const adminWhatsApp = "923191997277";
+  const adminWhatsApp = "923191997277";
 
   // ✅ WhatsApp handler
   const handleWhatsAppChat = () => {
@@ -39,8 +39,8 @@ const Home = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:5000/api/products");
-        setProducts(response.data.products || []);
+        const data = await api.get("/products");
+        setProducts(data.products || []);
       } catch (err) {
         setError(err.message);
         console.error("Error loading products:", err);
@@ -51,6 +51,9 @@ const Home = () => {
 
     fetchProducts();
   }, []);
+
+
+
 
   // Helper functions to filter products
   const getNewArrivals = () => {
@@ -97,14 +100,14 @@ const Home = () => {
   };
 
   const getHomeAppliancesProducts = () => {
-      const BurnSkinCategories = [
-        "Sunburn",
-        "Chemical Burn",
-        "Heat Burn",
-        "First Degree Burn",
-        "Second Degree Burn",
-        "Burn Ointments",
-      ];
+    const BurnSkinCategories = [
+      "Sunburn",
+      "Chemical Burn",
+      "Heat Burn",
+      "First Degree Burn",
+      "Second Degree Burn",
+      "Burn Ointments",
+    ];
     return products.filter((product) =>
       BurnSkinCategories.includes(product.category?.toLowerCase())
     ).slice(0, 8);
@@ -301,7 +304,7 @@ const Home = () => {
           </section>
         )}
       </div>
-       <button
+      <button
         onClick={handleWhatsAppChat}
         className="fixed bottom-5 right-5 bg-green-500 hover:bg-green-600 text-white rounded-full p-2 shadow-xl flex items-center justify-center transition transform hover:scale-110 z-50"
         title="Chat with Admin"
@@ -455,19 +458,12 @@ const EnhancedProductCard = ({ product, isDark = false }) => {
         return;
       }
 
-      const response = await axios.post("http://localhost:5000/api/cart", {
+      await api.post("/cart", {
         productId: product._id,
         quantity: 1
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
 
-      if (response.data.success) {
-        // Show success notification
-        alert("Added to cart successfully!");
-      }
+      alert("Added to cart successfully!");
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("Failed to add to cart. Please try again.");
@@ -487,20 +483,12 @@ const EnhancedProductCard = ({ product, isDark = false }) => {
 
       if (isWishlisted) {
         // Remove from wishlist
-        await axios.delete(`http://localhost:5000/api/user/wishlist/${product._id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        await api.delete(`/user/wishlist/${product._id}`);
         setIsWishlisted(false);
       } else {
         // Add to wishlist
-        await axios.post("http://localhost:5000/api/user/wishlist", {
+        await api.post("/user/wishlist", {
           productId: product._id
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
         });
         setIsWishlisted(true);
       }

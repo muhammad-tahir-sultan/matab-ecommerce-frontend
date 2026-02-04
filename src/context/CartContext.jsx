@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from './AuthContext';
+import { cartApi } from '../utils/api';
 
 const CartContext = createContext();
 
@@ -25,29 +26,15 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setCartCount(0);
-        setCartItems([]);
-        return;
-      }
+      const data = await cartApi.getCart();
+      // Adjust based on actual API response structure. 
+      // If getCart returns { items: [...] } or just [...]
+      // Previous code assumed array directly: const data = await response.json(); setCartItems(data);
+      // Let's assume cartApi.getCart() returns the data directly.
+      const items = Array.isArray(data) ? data : (data.items || []);
 
-      const response = await fetch("http://localhost:5000/api/cart", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCartItems(data);
-        const count = data.length; // Count unique items instead of total quantity
-        setCartCount(count);
-      } else {
-        setCartCount(0);
-        setCartItems([]);
-      }
+      setCartItems(items);
+      setCartCount(items.length);
     } catch (error) {
       console.error("Error fetching cart count:", error);
       setCartCount(0);
@@ -64,21 +51,7 @@ export const CartProvider = ({ children }) => {
       throw new Error("Please login to add items to cart");
     }
 
-    const token = localStorage.getItem("token");
-    const response = await fetch("http://localhost:5000/api/cart", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ productId, quantity }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to add to cart");
-    }
-
-    // Refresh cart count
+    await cartApi.addToCart(productId, quantity);
     await fetchCartCount();
   };
 
@@ -88,22 +61,8 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/cart/${productId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        // Refresh cart count
-        await fetchCartCount();
-      }
+      await cartApi.removeFromCart(productId);
+      await fetchCartCount();
     } catch (error) {
       console.error("Error removing from cart:", error);
     }
@@ -115,23 +74,8 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/cart/${productId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ quantity }),
-        }
-      );
-
-      if (response.ok) {
-        // Refresh cart count
-        await fetchCartCount();
-      }
+      await cartApi.updateCartItem(productId, quantity);
+      await fetchCartCount();
     } catch (error) {
       console.error("Error updating cart item:", error);
     }

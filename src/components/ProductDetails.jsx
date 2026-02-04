@@ -18,7 +18,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -39,13 +39,10 @@ const ProductDetails = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:5000/api/products/${productId}`
-        );
-        const data = await response.json();
+        const data = await api.get(`/products/${productId}`);
         setProduct(data.product || data);
       } catch (error) {
-        setError("Failed to fetch product details", error);
+        setError("Failed to fetch product details");
       } finally {
         setLoading(false);
       }
@@ -57,12 +54,8 @@ const ProductDetails = () => {
     const checkWishlist = async () => {
       if (!isAuthenticated) return;
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `http://localhost:5000/api/user/wishlist/check/${productId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsWishlisted(res.data.isWishlisted);
+        const res = await api.get(`/user/wishlist/check/${productId}`);
+        setIsWishlisted(res.isWishlisted);
       } catch (error) {
         console.error('Error checking wishlist:', error);
       }
@@ -93,19 +86,11 @@ const ProductDetails = () => {
     }
     setIsAddingToWishlist(true);
     try {
-      const token = localStorage.getItem("token");
       if (isWishlisted) {
-        await axios.delete(
-          `http://localhost:5000/api/user/wishlist/${product._id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.delete(`/user/wishlist/${product._id}`);
         setIsWishlisted(false);
       } else {
-        await axios.post(
-          `http://localhost:5000/api/user/wishlist`,
-          { productId: product._id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post("/user/wishlist", { productId: product._id });
         setIsWishlisted(true);
       }
     } catch {
@@ -155,7 +140,8 @@ const ProductDetails = () => {
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http") || url.startsWith("data:")) return url;
-    return `http://localhost:5000${url}`;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
   };
 
   const discount =

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../components/LoadingSpinner";
+import api, { API_BASE_URL } from "../utils/api";
 import {
   FiFilter,
   FiGrid,
@@ -9,6 +10,7 @@ import {
   FiStar,
   FiShoppingCart,
   FiHeart,
+  FiEye,
 } from "react-icons/fi";
 import "./CategoryPage.css";
 
@@ -25,15 +27,7 @@ const CategoryPage = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:5000/api/products/category/${category}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch products");
-        }
-
-        const data = await response.json();
+        const data = await api.get(`/products/category/${category}`);
         setProducts(data);
       } catch (err) {
         setError(err.message);
@@ -49,14 +43,14 @@ const CategoryPage = () => {
 
   const getCategoryDisplayName = (categorySlug) => {
     const categoryMap = {
-        "Select Catrgory": "Select Catrgory",
-        "hair": "Hair",
-        "skin-allergy": "Skin Allergy",
-        "burn-skin": "Burn Skin",
-        "body-power-up": "Body Power Up",
-        "weight-gainer": "Weight Gainer",
-        "heart-cleaner": "Heart Cleaner",
-        "other": "Other",
+      "Select Catrgory": "Select Catrgory",
+      "hair": "Hair",
+      "skin-allergy": "Skin Allergy",
+      "burn-skin": "Burn Skin",
+      "body-power-up": "Body Power Up",
+      "weight-gainer": "Weight Gainer",
+      "heart-cleaner": "Heart Cleaner",
+      "other": "Other",
     };
     return (
       categoryMap[categorySlug] ||
@@ -92,6 +86,13 @@ const CategoryPage = () => {
 
       return price >= minPrice && price <= maxPrice;
     });
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
   };
 
   const filteredAndSortedProducts = sortProducts(
@@ -223,7 +224,7 @@ const CategoryPage = () => {
                   <Link to={`/product/${product._id}`} className="product-link">
                     <div className="product-image">
                       <img
-                        src={product.images?.[0] || "/placeholder-product.jpg"}
+                        src={getImageUrl(product.images?.[0]) || "/placeholder-product.jpg"}
                         alt={product.name}
                         onError={(e) => {
                           e.target.src = "/placeholder-product.jpg";

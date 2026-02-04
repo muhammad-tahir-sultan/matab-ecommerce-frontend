@@ -4,10 +4,11 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { FiEdit, FiTrash2, FiPlus, FiEye } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiPlus, FiEye, FiPackage } from "react-icons/fi";
 import ProductEditForm from "./ProductEditForm";
 import "./ProductList.css";
 import PropTypes from "prop-types";
+import api, { API_BASE_URL } from "../../utils/api";
 
 const ProductList = forwardRef(({ onAddProduct }, ref) => {
   const [products, setProducts] = useState([]);
@@ -17,22 +18,13 @@ const ProductList = forwardRef(({ onAddProduct }, ref) => {
 
   const fetchProducts = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/admin/products",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-
-      const data = await response.json();
+      // Use the api utility which handles headers and base URL
+      const data = await api.get("/admin/products");
+      // The api utility returns the response data directly (handled by handleResponse)
+      // Assuming api.get returns the parsed JSON. The original code expected array or object.
+      // If api.js handleResponse returns response.json(), then `data` is the object.
+      // Check if backend returns array or { products: [...] } or just [...]
+      // Looking at original code: setProducts(data). So backend returns array?
       setProducts(data);
     } catch (err) {
       setError(err.message);
@@ -55,21 +47,7 @@ const ProductList = forwardRef(({ onAddProduct }, ref) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/products/${productId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete product");
-      }
+      await api.delete(`/admin/products/${productId}`);
 
       // Remove from local state
       setProducts((prev) =>
@@ -90,24 +68,11 @@ const ProductList = forwardRef(({ onAddProduct }, ref) => {
 
   const saveEdit = async (productId, updatedData) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/products/${productId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedData),
-        }
+      const updatedProduct = await api.put(
+        `/admin/products/${productId}`,
+        updatedData
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update product");
-      }
-
-      const updatedProduct = await response.json();
       setProducts((prev) =>
         prev.map((product) =>
           product._id === productId ? updatedProduct.product : product
@@ -139,7 +104,8 @@ const ProductList = forwardRef(({ onAddProduct }, ref) => {
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http") || url.startsWith("data:")) return url;
-    return `http://localhost:5000${url}`;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
   };
 
   return (

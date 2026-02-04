@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { FiUpload, FiSave, FiX, FiPlus, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import "./ProductForm.css";
+import api from "../../utils/api";
 
 const ProductForm = ({ onProductAdded }) => {
   const [formData, setFormData] = useState({
@@ -153,35 +154,21 @@ const ProductForm = ({ onProductAdded }) => {
 
       const base64Images = await Promise.all(imagePromises);
 
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/admin/products",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            price: parseFloat(formData.price),
-            quantity: parseInt(formData.quantity),
-            category: formData.category,
-            brand: formData.brand.trim(),
-            images: base64Images,
-            specifications: formData.specifications.filter(
-              (spec) => spec.key && spec.value
-            ),
-          }),
-        }
-      );
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price: parseFloat(formData.price),
+        quantity: parseInt(formData.quantity),
+        category: formData.category,
+        brand: formData.brand.trim(),
+        images: base64Images,
+        specifications: formData.specifications.filter(
+          (spec) => spec.key && spec.value
+        ),
+      };
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create product");
-      }
+      await api.post("/admin/products", payload);
+      // api.post throws if not ok, so next lines only run on success
 
       setSuccess(true);
       resetForm();
@@ -194,7 +181,7 @@ const ProductForm = ({ onProductAdded }) => {
       // Reset success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to create product");
     } finally {
       setLoading(false);
     }

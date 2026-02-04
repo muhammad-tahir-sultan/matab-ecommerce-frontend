@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import {
   FiSearch,
   FiX,
@@ -38,8 +38,8 @@ const Compare = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/products");
-        const products = response.data.products || [];
+        const response = await api.get("/products");
+        const products = response.products || [];
         const uniqueCategories = [
           ...new Set(products.map((p) => p.category)),
         ].filter(Boolean);
@@ -64,10 +64,10 @@ const Compare = () => {
           params.append("category", selectedCategory);
         }
 
-        const response = await axios.get(
-          `http://localhost:5000/api/products/search-compare?${params}`
+        const response = await api.get(
+          `/products/search-compare?${params}`
         );
-        setSearchResults(response.data.products || []);
+        setSearchResults(response.products || []);
       } catch (error) {
         console.error("Error searching products:", error);
         setSearchResults([]);
@@ -149,11 +149,7 @@ const Compare = () => {
         return;
       }
 
-      await axios.post(
-        "http://localhost:5000/api/cart",
-        { productId, quantity: 1 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post("/cart", { productId, quantity: 1 });
       alert("Added to cart successfully!");
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -169,11 +165,7 @@ const Compare = () => {
         return;
       }
 
-      await axios.post(
-        "http://localhost:5000/api/user/wishlist",
-        { productId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post("/user/wishlist", { productId });
       alert("Added to wishlist successfully!");
     } catch (error) {
       console.error("Error adding to wishlist:", error);
@@ -257,11 +249,10 @@ const Compare = () => {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
-                      selectedCategory === cat
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ${selectedCategory === cat
                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {cat === "all" ? "All Categories" : cat}
                   </button>
@@ -338,11 +329,10 @@ const Compare = () => {
                       </p>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold ${
-                            product.quantity > 0
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold ${product.quantity > 0
                               ? "bg-green-100 text-green-700"
                               : "bg-red-100 text-red-700"
-                          }`}
+                            }`}
                         >
                           {product.quantity > 0 ? (
                             <>
@@ -463,7 +453,7 @@ const Compare = () => {
                                 {Math.round(
                                   ((product.originalPrice - product.price) /
                                     product.originalPrice) *
-                                    100
+                                  100
                                 )}
                                 %
                               </span>
@@ -509,13 +499,12 @@ const Compare = () => {
                     {compareItems.map((product) => (
                       <td key={product._id} className="p-6 text-center">
                         <span
-                          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl shadow-sm ${
-                            product.quantity > 20
+                          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl shadow-sm ${product.quantity > 20
                               ? "bg-green-100 text-green-700 border border-green-200"
                               : product.quantity > 0
-                              ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                              : "bg-red-100 text-red-700 border border-red-200"
-                          }`}
+                                ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                                : "bg-red-100 text-red-700 border border-red-200"
+                            }`}
                         >
                           {product.quantity > 0 ? (
                             <>
@@ -537,9 +526,8 @@ const Compare = () => {
                   {specKeys.map((key, index) => (
                     <tr
                       key={key}
-                      className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors ${
-                        index % 2 === 0 ? "bg-gray-50/40" : ""
-                      }`}
+                      className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors ${index % 2 === 0 ? "bg-gray-50/40" : ""
+                        }`}
                     >
                       <td className="p-6 font-bold text-gray-900 sticky left-0 bg-white z-10">
                         {key}
@@ -579,11 +567,10 @@ const Compare = () => {
                           <button
                             onClick={() => handleAddToCart(product._id)}
                             disabled={product.quantity === 0}
-                            className={`w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-200 shadow-md ${
-                              product.quantity === 0
+                            className={`w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-200 shadow-md ${product.quantity === 0
                                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                                 : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
-                            }`}
+                              }`}
                           >
                             <FiShoppingCart className="w-5 h-5" />
                             Add to Cart

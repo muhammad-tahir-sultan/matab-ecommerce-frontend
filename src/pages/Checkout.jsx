@@ -16,7 +16,7 @@ import {
     FiAlertCircle,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
 
 const Checkout = () => {
     const navigate = useNavigate();
@@ -59,16 +59,20 @@ const Checkout = () => {
         }
     }, [isAuthenticated, navigate, user]);
 
+    const getImageUrl = (url) => {
+        if (!url) return "";
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        return `${baseUrl}${url}`;
+    };
+
     const fetchCart = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
-            const res = await axios.get("http://localhost:5000/api/cart", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const data = await api.get("/cart");
 
             // Extract cart data from response
-            const cart = res.data?.cart || res.data?.data?.cart || res.data;
+            const cart = data.cart || data.data?.cart || data;
 
             if (!cart || !cart.items || cart.items.length === 0) {
                 navigate("/cart");
@@ -134,13 +138,11 @@ const Checkout = () => {
         try {
             setLoading(true);
 
-            const token = localStorage.getItem("token");
-
-            const response = await axios.post(
-                "http://localhost:5000/api/user/orders",
-                { shippingAddress, paymentMethod: "cash_on_delivery", notes },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const response = await api.post("/user/orders", {
+                shippingAddress,
+                paymentMethod: "cash_on_delivery",
+                notes
+            });
 
             // ✅ Build product info string
             const productDetails = cartData.items
@@ -186,7 +188,7 @@ Payment: Cash on Delivery
 
             window.open(url, "_blank");
 
-            setOrderDetails(response.data.order);
+            setOrderDetails(response.order || response);
             setOrderPlaced(true);
         } catch (error) {
             console.log(error);
@@ -563,7 +565,7 @@ Payment: Cash on Delivery
                                 {cartData.items.map((item) => (
                                     <div key={item._id} className="flex gap-3">
                                         <img
-                                            src={item.product?.images?.[0] || "/placeholder-product.jpg"}
+                                            src={getImageUrl(item.product?.images?.[0]) || "/placeholder-product.jpg"}
                                             alt={item.product?.name || "Product"}
                                             className="w-16 h-16 object-cover rounded-lg bg-gray-100"
                                         />
