@@ -3,7 +3,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiHeart, FiTrash2, FiShoppingCart, FiEye, FiStar, FiPackage, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api, { API_BASE_URL, cartApi } from '../../utils/api';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
@@ -12,6 +12,13 @@ const Favorites = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [removing, setRemoving] = useState({});
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   useEffect(() => {
     fetchFavorites();
   }, []);
@@ -19,22 +26,10 @@ const Favorites = () => {
   const fetchFavorites = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError("Please login to view your favorites");
-        return;
-      }
-
-      const response = await axios.get('http://localhost:5000/api/user/wishlist', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      setFavorites(response.data || []);
+      const data = await api.get('/user/wishlist');
+      setFavorites(data || []);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to fetch favorites");
+      setError(err.message || "Failed to fetch favorites");
     } finally {
       setLoading(false);
     }
@@ -51,18 +46,12 @@ const Favorites = () => {
     setRemoving(prev => ({ ...prev, [productId]: true }));
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/user/wishlist/${productId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await api.delete(`/user/wishlist/${productId}`);
 
       setFavorites(prev => prev.filter(item => item.productId._id !== productId));
       showNotification("Removed from favorites!");
     } catch (error) {
-      showNotification("Failed to remove from favorites", error);
+      showNotification("Failed to remove from favorites", error.message);
     } finally {
       setRemoving(prev => ({ ...prev, [productId]: false }));
     }
@@ -70,20 +59,10 @@ const Favorites = () => {
 
   const addToCart = async (productId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/cart', {
-        productId,
-        quantity: 1
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
+      await cartApi.addToCart(productId, 1);
       showNotification("Added to cart successfully!");
     } catch (error) {
-      showNotification("Failed to add to cart", error);
+      showNotification("Failed to add to cart", error.message);
     }
   };
 
@@ -215,7 +194,7 @@ const Favorites = () => {
                 <div className="relative aspect-square bg-gray-50 overflow-hidden">
                   {item.productId.images?.[0] ? (
                     <img
-                      src={item.productId.images[0]}
+                      src={getImageUrl(item.productId.images[0])}
                       alt={item.productId.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

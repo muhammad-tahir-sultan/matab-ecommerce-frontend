@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { FiHeart, FiTrash2, FiShoppingCart, FiEye } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import api, { API_BASE_URL, cartApi } from "../../utils/api";
 
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
 
   useEffect(() => {
     fetchWishlist();
@@ -13,19 +21,8 @@ const Wishlist = () => {
 
   const fetchWishlist = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/user/wishlist", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch wishlist");
-      }
-
-      const data = await response.json();
+      setLoading(true);
+      const data = await api.get('/user/wishlist');
       setWishlistItems(data);
     } catch (err) {
       setError(err.message);
@@ -36,21 +33,7 @@ const Wishlist = () => {
 
   const removeFromWishlist = async (productId) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/user/wishlist/${productId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to remove from wishlist");
-      }
+      await api.delete(`/user/wishlist/${productId}`);
 
       setWishlistItems((prev) =>
         prev.filter((item) => item.productId._id !== productId)
@@ -62,20 +45,7 @@ const Wishlist = () => {
 
   const addToCart = async (productId) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/cart", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ productId, quantity: 1 }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add to cart");
-      }
-
+      await cartApi.addToCart(productId, 1);
       alert("Added to cart successfully!");
     } catch (err) {
       alert(err.message);
@@ -128,7 +98,7 @@ const Wishlist = () => {
               <div className="relative h-56 bg-gray-100">
                 {item.productId.images && item.productId.images[0] ? (
                   <img
-                    src={item.productId.images[0]}
+                    src={getImageUrl(item.productId.images[0])}
                     alt={item.productId.name}
                     className="w-full h-full object-cover"
                   />

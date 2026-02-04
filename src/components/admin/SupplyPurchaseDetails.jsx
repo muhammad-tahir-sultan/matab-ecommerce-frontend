@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiShoppingCart, FiPackage, FiUsers, FiDollarSign, FiCalendar, FiArrowRight, FiInfo } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import api, { API_BASE_URL } from "../../utils/api";
 
 const SupplyPurchaseDetails = () => {
   const [data, setData] = useState(null);
@@ -8,25 +9,20 @@ const SupplyPurchaseDetails = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('products');
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   useEffect(() => {
     fetchSupplyPurchaseData();
   }, []);
 
   const fetchSupplyPurchaseData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/supply-purchase', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch supply/purchase data');
-      }
-
-      const responseData = await response.json();
+      const responseData = await api.get('/admin/supply-purchase');
       setData(responseData);
     } catch (err) {
       setError(err.message);
@@ -184,7 +180,7 @@ const SupplyPurchaseDetails = () => {
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                             {product.images?.[0] ? (
-                              <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                              <img src={getImageUrl(product.images[0])} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400">
                                 <FiPackage />

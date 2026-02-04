@@ -3,25 +3,25 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { FiStar, FiShoppingCart, FiHeart, FiClock } from "react-icons/fi";
+import api, { API_BASE_URL, productApi } from "../utils/api";
 
 const NewArrivals = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          "http://localhost:5000/api/products/new-arrivals"
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch new arrivals");
-        }
-
-        const data = await response.json();
+        const data = await productApi.getNewArrivals();
         setProducts(data);
       } catch (err) {
         setError(err.message);
@@ -100,7 +100,7 @@ const NewArrivals = () => {
                   className="relative group block"
                 >
                   <img
-                    src={product.images?.[0] || "/placeholder-product.jpg"}
+                    src={getImageUrl(product.images?.[0]) || "/placeholder-product.jpg"}
                     alt={product.name}
                     onError={(e) => (e.target.src = "/placeholder-product.jpg")}
                     className="w-full h-60 object-cover transition-transform duration-300 group-hover:scale-110"

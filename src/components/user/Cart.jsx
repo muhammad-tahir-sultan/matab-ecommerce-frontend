@@ -6,7 +6,7 @@ import {
   FiCreditCard, FiHeart, FiStar, FiX, FiAlertCircle
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api, { API_BASE_URL, cartApi } from "../../utils/api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -16,30 +16,30 @@ const Cart = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   useEffect(() => { fetchCart(); }, []);
 
   const fetchCart = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Please login to view your cart");
-        return;
-      }
-      const res = await axios.get("http://localhost:5000/api/cart", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await cartApi.getCart();
 
-      const cartData = res.data?.cart || res.data?.data?.cart || res.data;
+      const cartData = data.cart || data.data?.cart || data;
       const items = cartData?.items || [];
 
-      console.log("Cart Response:", res.data);
+      console.log("Cart Response:", data);
       console.log("Cart Items:", items);
 
       setCartItems(items);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Failed to fetch cart");
+      setError(err.message || "Failed to fetch cart");
     } finally {
       setLoading(false);
     }
@@ -54,9 +54,7 @@ const Cart = () => {
     if (newQty < 1) return;
     setUpdating(prev => ({ ...prev, [id]: true }));
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:5000/api/cart/${id}`, { quantity: newQty },
-        { headers: { Authorization: `Bearer ${token}` } });
+      await cartApi.updateCartItem(id, newQty);
       setCartItems(prev => prev.map(i =>
         i.productId._id === id ? { ...i, quantity: newQty } : i));
       showNotification("Quantity updated");
@@ -70,10 +68,7 @@ const Cart = () => {
   const handleRemove = async (id) => {
     setUpdating(prev => ({ ...prev, [id]: true }));
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/cart/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await cartApi.removeFromCart(id);
       setCartItems(prev => prev.filter(i => i.productId._id !== id));
       showNotification("Item removed");
     } catch {
@@ -85,10 +80,7 @@ const Cart = () => {
 
   const addToWishlist = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/user/wishlist", { productId: id }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/user/wishlist", { productId: id });
       showNotification("Added to wishlist");
     } catch {
       showNotification("Failed to add", "error");
@@ -194,7 +186,7 @@ const Cart = () => {
                 {/* Image */}
                 <div className="w-32 h-32 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden">
                   <img
-                    src={item.product?.images?.[0] || '/placeholder.jpg'}
+                    src={getImageUrl(item.product?.images?.[0]) || '/placeholder.jpg'}
                     alt={item.product?.name || "Product"}
                     className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                   />

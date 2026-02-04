@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import "../Styles/dashboard.css";
 import { useAuth } from "../context/AuthContext";
+import { authApi } from "../utils/api";
 import OrderHistory from "../components/user/OrderHistory";
 import Favorites from "../components/user/Favorites";
 import UserProfile from "./UserProfile";
@@ -26,21 +27,8 @@ const Dashboard = () => {
 
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-
-        const response = await fetch("http://localhost:5000/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUserDetails(data);
-        } else {
-          console.error("Failed to fetch user details");
-        }
+        const data = await authApi.getProfile();
+        setUserDetails(data);
       } catch (error) {
         console.error("Error fetching user details:", error);
       } finally {

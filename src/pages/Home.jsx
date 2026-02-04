@@ -19,7 +19,7 @@ import {
 import HeroSection from "../components/sections/heroSection";
 import ProductSection from "../components/sections/ProductSection";
 import EmptyState from "../components/sections/EmptyState";
-import api from "../utils/api";
+import api, { API_BASE_URL } from "../utils/api";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -396,6 +396,13 @@ const EnhancedProductCard = ({ product, isDark = false }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const navigate = useNavigate();
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   const cardBg = isDark ? "bg-white bg-opacity-10 backdrop-blur-sm border-white border-opacity-20" : "bg-white border-gray-200";
   const textColor = isDark ? "text-white" : "text-gray-900";
   const subtextColor = isDark ? "text-blue-100" : "text-gray-600";
@@ -524,7 +531,7 @@ const EnhancedProductCard = ({ product, isDark = false }) => {
         <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden relative">
           {product.images && product.images.length > 0 ? (
             <img
-              src={product.images[0]}
+              src={getImageUrl(product.images[0])}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {

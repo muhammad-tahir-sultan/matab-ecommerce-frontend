@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { authApi } from "../utils/api";
 import "./profile.css";
 
 function UserProfile({ user: propUser, onLogout }) {
@@ -53,26 +54,12 @@ function UserProfile({ user: propUser, onLogout }) {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          currentPassword: formData.password,
-          newPassword: formData.newPassword,
-        }),
+      const data = await authApi.updateProfile({
+        username: formData.username,
+        email: formData.email,
+        currentPassword: formData.password,
+        newPassword: formData.newPassword,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update profile");
-      }
 
       setMessage({ text: "Profile updated successfully", type: "success" });
       setEditMode(false);

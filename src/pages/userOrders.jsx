@@ -20,7 +20,7 @@ import {
     FiFilter,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import api, { API_BASE_URL } from "../utils/api";
 
 const UserOrders = () => {
     const navigate = useNavigate();
@@ -39,25 +39,29 @@ const UserOrders = () => {
         fetchOrders();
     }, [isAuthenticated, navigate, filterStatus]);
 
+    const getImageUrl = (url) => {
+        if (!url) return "";
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        return `${baseUrl}${url}`;
+    };
+
     const fetchOrders = async () => {
         try {
             setLoading(true);
             setError(null);
-            const token = localStorage.getItem("token");
 
-            let url = "http://localhost:5000/api/user/orders";
+            let url = "/user/orders";
             if (filterStatus !== "all") {
                 url += `?status=${filterStatus}`;
             }
 
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const data = await api.get(url);
 
-            setOrders(response.data.orders || []);
+            setOrders(data.orders || []);
         } catch (err) {
             console.error("Error fetching orders:", err);
-            setError(err.response?.data?.message || "Failed to load orders");
+            setError(err.message || "Failed to load orders");
         } finally {
             setLoading(false);
         }
@@ -166,8 +170,8 @@ const UserOrders = () => {
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
                                 className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${filterStatus === status
-                                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
                                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -283,7 +287,7 @@ const OrderCard = ({ order, index, onViewDetails, getStatusInfo }) => {
                         {order.items?.slice(0, 4).map((item, idx) => (
                             <div key={idx} className="flex-shrink-0">
                                 <img
-                                    src={item.product?.images?.[0] || "/placeholder.jpg"}
+                                    src={getImageUrl(item.product?.images?.[0]) || "/placeholder.jpg"}
                                     alt={item.product?.name || "Product"}
                                     className="w-16 h-16 object-cover rounded-lg bg-gray-100 border border-gray-200"
                                 />
@@ -428,7 +432,7 @@ const OrderDetailsModal = ({ order, onClose, getStatusInfo }) => {
                             {order.items?.map((item, index) => (
                                 <div key={index} className="flex gap-4 bg-gray-50 rounded-xl p-4">
                                     <img
-                                        src={item.product?.images?.[0] || "/placeholder.jpg"}
+                                        src={getImageUrl(item.product?.images?.[0]) || "/placeholder.jpg"}
                                         alt={item.product?.name || "Product"}
                                         className="w-20 h-20 object-cover rounded-lg bg-gray-200"
                                     />

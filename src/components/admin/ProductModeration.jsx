@@ -7,6 +7,7 @@ import {
   FiSearch,
   FiEye,
 } from "react-icons/fi";
+import api, { API_BASE_URL, adminApi } from "../../utils/api";
 
 const ProductModeration = () => {
   const [products, setProducts] = useState([]);
@@ -15,25 +16,20 @@ const ProductModeration = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/products", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-
-      const data = await response.json();
+      const data = await adminApi.getProducts();
       setProducts(data);
     } catch (err) {
       setError(err.message);
@@ -48,21 +44,7 @@ const ProductModeration = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8234/api/admin/products/${productId}/revoke`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to revoke product");
-      }
+      await api.put(`/admin/products/${productId}/revoke`);
 
       // Update local state
       setProducts((prev) =>
@@ -83,21 +65,7 @@ const ProductModeration = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8234/api/admin/products/${productId}/reactivate`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to reactivate product");
-      }
+      await api.put(`/admin/products/${productId}/reactivate`);
 
       // Update local state
       setProducts((prev) =>
@@ -231,7 +199,7 @@ const ProductModeration = () => {
                       <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                         {product.images && product.images[0] ? (
                           <img
-                            src={product.images[0]}
+                            src={getImageUrl(product.images[0])}
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />
@@ -272,11 +240,10 @@ const ProductModeration = () => {
                   {/* Stock */}
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        product.quantity > 0
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${product.quantity > 0
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
-                      }`}
+                        }`}
                     >
                       {product.quantity > 0
                         ? `${product.quantity}`
@@ -287,15 +254,14 @@ const ProductModeration = () => {
                   {/* Status */}
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                        product.status === "active"
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize ${product.status === "active"
                           ? "bg-green-100 text-green-700"
                           : product.status === "revoked"
-                          ? "bg-red-100 text-red-700"
-                          : product.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
+                            ? "bg-red-100 text-red-700"
+                            : product.status === "pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                        }`}
                     >
                       {product.status}
                     </span>

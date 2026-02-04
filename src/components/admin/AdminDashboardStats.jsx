@@ -7,6 +7,7 @@ import {
   FiDollarSign,
   FiTrendingUp,
 } from "react-icons/fi";
+import { adminApi } from "../../utils/api";
 
 // Inline lightweight SVG chart for admin trend
 const AdminTrendChart = ({ data }) => {
@@ -131,19 +132,7 @@ const AdminDashboardStats = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/admin/stats", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch dashboard stats");
-      }
-
-      const data = await response.json();
+      const data = await adminApi.getStats();
       setStats(data);
     } catch (err) {
       setError(err.message);

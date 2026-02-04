@@ -10,6 +10,7 @@ import {
   FiPercent,
 } from "react-icons/fi";
 import "./TodayDeals.css";
+import api, { API_BASE_URL, productApi } from "../utils/api";
 
 const TodayDeals = () => {
   const [products, setProducts] = useState([]);
@@ -25,15 +26,7 @@ const TodayDeals = () => {
     const fetchDeals = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          "http://localhost:5000/api/products/deals"
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch deals");
-        }
-
-        const data = await response.json();
+        const data = await productApi.getDeals();
         setProducts(data);
       } catch (err) {
         setError(err.message);
@@ -66,6 +59,13 @@ const TodayDeals = () => {
 
   const calculateDiscount = (originalPrice, currentPrice) => {
     return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
   };
 
   if (loading) return <LoadingSpinner fullScreen text="Loading today's deals..." />;
@@ -152,7 +152,7 @@ const TodayDeals = () => {
                   <Link to={`/product/${product._id}`} className="product-link">
                     <div className="product-image">
                       <img
-                        src={product.images?.[0] || "/placeholder-product.jpg"}
+                        src={getImageUrl(product.images?.[0]) || "/placeholder-product.jpg"}
                         alt={product.name}
                         onError={(e) => {
                           e.target.src = "/placeholder-product.jpg";

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FiPackage, FiCalendar, } from 'react-icons/fi';
+import api, { API_BASE_URL } from '../../utils/api';
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -10,21 +11,16 @@ const OrderHistory = () => {
     fetchOrderHistory();
   }, []);
 
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("data:")) return url;
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   const fetchOrderHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/user/orders', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch order history');
-      }
-
-      const data = await response.json();
+      const data = await api.get('/user/orders');
       setOrders(data);
     } catch (err) {
       setError(err.message);
@@ -276,7 +272,7 @@ const OrderHistory = () => {
                 <div style={styles.productImage}>
                   {order.product?.images && order.product.images[0] ? (
                     <img
-                      src={order.product.images[0]}
+                      src={getImageUrl(order.product.images[0])}
                       alt={order.product.name}
                       style={styles.productImageImg}
                     />
